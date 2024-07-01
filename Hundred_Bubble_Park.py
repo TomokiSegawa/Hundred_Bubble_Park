@@ -5,14 +5,14 @@ import math
 
 # 15色の定義
 colors = {
-    '赤': 'red', '青': 'blue', '緑': 'green', '黄': 'yellow', '紫': 'purple',
-    'オレンジ': 'orange', 'ピンク': 'pink', '茶': 'brown', '灰色': 'gray',
-    '水色': 'skyblue', '紺': 'navy', '黄緑': '#9ACD32', '黒': 'black',
-    'ベージュ': 'beige', '薄紫': 'lavender'
+    'あか': 'red', 'あお': 'blue', 'みどり': 'green', 'きいろ': 'yellow', 'むらさき': 'purple',
+    'オレンジ': 'orange', 'ピンク': 'pink', 'ちゃいろ': '#8B4513', 'はいいろ': 'gray',
+    'みずいろ': 'skyblue', 'こん': 'navy', 'きみどり': '#9ACD32', 'くろ': 'black',
+    'ベージュ': 'beige', 'うすむらさき': 'lavender'
 }
 
-# 8つの図形の定義
-shapes = ['円', '正方形', '長方形', '三角形', '五角形', '六角形', '楕円', 'ひし形']
+# 8つの図形の定義（お花を削除し、船を追加）
+shapes = ['まる', 'しかく', 'さんかく', 'ごかく', 'ろっかく', 'ほし', 'おうぎ', 'ふね']
 
 def create_shape_image(shape, color, board_size=300, shape_size=100, seed=None):
     if seed is not None:
@@ -21,7 +21,6 @@ def create_shape_image(shape, color, board_size=300, shape_size=100, seed=None):
     image = Image.new('RGB', (board_size, board_size), color='white')
     draw = ImageDraw.Draw(image)
     
-    # ランダムな位置を生成（ボードからはみ出さないように）
     max_x = board_size - shape_size
     max_y = board_size - shape_size
     x = random.randint(0, max_x)
@@ -30,19 +29,17 @@ def create_shape_image(shape, color, board_size=300, shape_size=100, seed=None):
     center_x = x + shape_size // 2
     center_y = y + shape_size // 2
     
-    if shape == '円':
+    if shape == 'まる':
         draw.ellipse([x, y, x+shape_size, y+shape_size], fill=color)
-    elif shape == '正方形':
+    elif shape == 'しかく':
         draw.rectangle([x, y, x+shape_size, y+shape_size], fill=color)
-    elif shape == '長方形':
-        draw.rectangle([x, y+shape_size//4, x+shape_size, y+shape_size-shape_size//4], fill=color)
-    elif shape == '三角形':
+    elif shape == 'さんかく':
         draw.polygon([
             (center_x, y),
             (x, y+shape_size),
             (x+shape_size, y+shape_size)
         ], fill=color)
-    elif shape == '五角形':
+    elif shape == 'ごかく':
         points = []
         for i in range(5):
             angle = i * 72 - 90
@@ -50,16 +47,38 @@ def create_shape_image(shape, color, board_size=300, shape_size=100, seed=None):
             point_y = center_y + int((shape_size//2 - 5) * math.sin(math.radians(angle)))
             points.append((point_x, point_y))
         draw.polygon(points, fill=color)
-    elif shape == '六角形':
+    elif shape == 'ろっかく':
         draw.regular_polygon((center_x, center_y, shape_size//2 - 5), 6, fill=color)
-    elif shape == '楕円':
-        draw.ellipse([x, y+shape_size//4, x+shape_size, y+shape_size-shape_size//4], fill=color)
-    elif shape == 'ひし形':
+    elif shape == 'ほし':
+        points = []
+        for i in range(10):
+            angle = i * 36 - 90
+            r = shape_size//2 - 5 if i % 2 == 0 else shape_size//4 - 5
+            point_x = center_x + int(r * math.cos(math.radians(angle)))
+            point_y = center_y + int(r * math.sin(math.radians(angle)))
+            points.append((point_x, point_y))
+        draw.polygon(points, fill=color)
+    elif shape == 'おうぎ':
+        # おうぎの向きを変更（要が下向き）
+        draw.pieslice([x, y, x+shape_size, y+shape_size], start=240, end=300, fill=color)
+    elif shape == 'ふね':
+        # 船の形を描画
+        hull_height = shape_size // 3
+        sail_height = shape_size * 2 // 3
+        
+        # 船体
         draw.polygon([
-            (center_x, y),
-            (x+shape_size, center_y),
-            (center_x, y+shape_size),
-            (x, center_y)
+            (x, y + shape_size - hull_height),
+            (x + shape_size, y + shape_size - hull_height),
+            (x + shape_size * 4 // 5, y + shape_size),
+            (x + shape_size // 5, y + shape_size)
+        ], fill=color)
+        
+        # 帆
+        draw.polygon([
+            (x + shape_size // 3, y + shape_size - hull_height),
+            (x + shape_size // 3, y),
+            (x + shape_size * 2 // 3, y + shape_size - hull_height - sail_height // 2)
         ], fill=color)
     
     return image
@@ -79,7 +98,6 @@ def main():
     
     st.write("がめんにでてきた「かたち」と「いろ」はなにかな？")
     
-    # コンテナを使用して幅を制限
     container = st.container()
     with container:
         col1, col2, col3 = st.columns([1, 3, 1])
@@ -88,7 +106,6 @@ def main():
             img_placeholder = st.empty()
             img_placeholder.image(image, use_column_width=True)
     
-    # ボタンのスタイルをカスタマイズ
     st.markdown("""
     <style>
     .stButton>button {
@@ -120,15 +137,14 @@ def main():
             st.session_state.show_answer = True
     
     if st.session_state.show_answer:
-        st.write(f"現在の形: **{st.session_state.current_shape}**")
-        st.write(f"現在の色: **{st.session_state.current_color}**")
+        st.write(f"げんざいのかたち: **{st.session_state.current_shape}**")
+        st.write(f"げんざいのいろ: **{st.session_state.current_color}**")
     
-    # 親向けの説明
     st.markdown("---")
-    st.write("### 親御さんへ")
+    st.write("### 親の方へ")
     st.write("""
     「ハンドレッド・シャボン・パーク」へようこそ！
-    このアプリは、お子様の視覚発達と形状・色彩認識能力を促進するためのものです。
+    このアプリは、お子様の視覚発達と形状・色彩認識能力を高めるためのものです。
     - 100種類以上の形と色の組み合わせが、シャボンのように次々と現れます。
     - 「がめんをかえる」ボタンをタッチすると、新しい形と色の組み合わせが表示されます。
     - お子様に画面に表示された形と色を答えてもらいましょう。
